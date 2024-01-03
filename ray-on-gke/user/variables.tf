@@ -21,13 +21,13 @@ variable "project_id" {
 variable "namespace" {
   type        = string
   description = "Kubernetes namespace where resources are deployed"
-  default     = "allencwang"
+  default     = "allencwang-ms"
 }
 
 variable "service_account" {
   type        = string
   description = "Google Cloud IAM service account for authenticating with GCP services"
-  default     = "allencwang-system-account"
+  default     = "allencwang-system-account-ms"
 }
 
 variable "enable_tpu" {

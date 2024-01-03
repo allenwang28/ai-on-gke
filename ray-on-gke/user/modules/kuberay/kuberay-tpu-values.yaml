@@ -144,17 +144,17 @@ worker:
   # If you want to disable the default workergroup
   # uncomment the line below
   # disabled: true
-  groupName: tpu-trainer
+  groupName: tpu-pod-1
   serviceAccountName: default
-  replicas: 1
-  minReplicas: 1
-  maxReplicas: 1
+  replicas: 2
+  minReplicas: 2
+  maxReplicas: 2
   type: worker
   labels:
     cloud.google.com/gke-ray-node-type: worker
   rayStartParams:
     block: 'true'
-    resources: '"{\"TPU\": 4, \"trainer\": 1}"'
+    resources: '"{\"TPU\": 4}"'
   initContainerImage: 'busybox:1.28'  # Enable users to specify the image for init container. Users can pull the busybox image from their private repositories.
   # Security context for the init container.
   initContainerSecurityContext:
@@ -200,7 +200,7 @@ worker:
   nodeSelector:
     iam.gke.io/gke-metadata-server-enabled: "true"
     cloud.google.com/gke-tpu-accelerator: tpu-v4-podslice
-    cloud.google.com/gke-tpu-topology: 2x2x1
+    cloud.google.com/gke-tpu-topology: 2x2x2
   tolerations: []
   affinity: {}
   # Ray container security context.
@@ -239,18 +239,18 @@ worker:
 # For example, key:small-group in the map below
 # will be used as the groupName
 additionalWorkerGroups:
-  reverbWorker:
+  tpu-pod-2:
     serviceAccountName: default
     disabled: false
-    replicas: 1
-    minReplicas: 1
-    maxReplicas: 1
+    replicas: 2
+    minReplicas: 2
+    maxReplicas: 2
     type: worker
     labels:
       cloud.google.com/gke-ray-node-type: worker
     rayStartParams:
       block: 'true'
-      resources: '"{\"TPU\": 4, \"replay_buffer\": 1, \"inference_cpu_handler\": 1}"'
+      resources: '"{\"TPU\": 4}"'
     initContainerImage: 'busybox:1.28'  # Enable users to specify the image for init container. Users can pull the busybox image from their private repositories.
     # Security context for the init container.
     initContainerSecurityContext:
@@ -296,7 +296,7 @@ additionalWorkerGroups:
     nodeSelector:
       iam.gke.io/gke-metadata-server-enabled: "true"
       cloud.google.com/gke-tpu-accelerator: tpu-v4-podslice
-      cloud.google.com/gke-tpu-topology: 2x2x1
+      cloud.google.com/gke-tpu-topology: 2x2x2
     tolerations: []
     affinity: {}
     # Ray container security context.
@@ -332,7 +332,7 @@ additionalWorkerGroups:
           name: fluentbit-config
   cpuWorker:
     serviceAccountName: default
-    disabled: false
+    disabled: true
     replicas: 1
     minReplicas: 100
     maxReplicas: 100

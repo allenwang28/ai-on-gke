@@ -13,7 +13,7 @@
 # limitations under the License.
 
 resource "helm_release" "ray-cluster" {
-  name       = "muzero-cluster"
+  name       = "ray-multislice"
   repository = "https://ray-project.github.io/kuberay-helm/"
   chart      = "ray-cluster"
   namespace  = var.namespace
