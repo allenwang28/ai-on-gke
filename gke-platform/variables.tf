@@ -15,19 +15,19 @@
 variable "project_id" {
   type        = string
   description = "GCP project id"
-  default     = "<your project>"
+  default     = "tpu-vm-gke-testing"
 }
 
 variable "region" {
   type        = string
   description = "GCP project region or zone"
-  default     = "us-central1"
+  default     = "us-central2-b"
 }
 
 variable "cluster_name" {
   type        = string
   description = "GKE cluster name"
-  default     = "ml-cluster"
+  default     = "muzero-ray-cluster"
 }
 
 variable "cluster_labels" {
@@ -47,7 +47,7 @@ variable "enable_autopilot" {
 variable "enable_tpu" {
   type        = bool
   description = "Set to true to create TPU node pool"
-  default     = false
+  default     = true
 }
 
 variable "gpu_pool_machine_type" {

@@ -46,12 +46,6 @@ resource "google_container_cluster" "ml_cluster" {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
-  addons_config {
-    gcs_fuse_csi_driver_config {
-      enabled = true
-    }
-  }
-
   release_channel {
     channel = "RAPID"
   }
@@ -62,13 +56,9 @@ resource "google_container_cluster" "ml_cluster" {
 resource "google_container_node_pool" "cpu_pool" {
   name     = "cpu-pool"
   location = var.region
-  count    = var.enable_autopilot ? 0 : 1
+  node_count    = 100
+  count = 1
   cluster  = var.enable_autopilot ? null : google_container_cluster.ml_cluster[0].name
-
-  autoscaling {
-    min_node_count = 1
-    max_node_count = 3
-  }
 
   management {
     auto_repair  = "true"
@@ -139,8 +129,8 @@ resource "google_container_node_pool" "tpu_pool" {
   location           = var.region
   node_locations     = ["us-central2-b"]
   cluster            = var.enable_autopilot == false && var.enable_tpu ? google_container_cluster.ml_cluster[0].name : null
-  initial_node_count = var.num_nodes
-  count              = var.enable_autopilot == false && var.enable_tpu ? 1 : 0
+  initial_node_count = 3
+  count              = 1
 
   node_config {
     machine_type = "ct4p-hightpu-4t"

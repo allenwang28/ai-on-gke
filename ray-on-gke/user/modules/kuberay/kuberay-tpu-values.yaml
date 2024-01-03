@@ -21,9 +21,9 @@
 
 image:
   # Replace this with your own image if needed.
-  repository: rayproject/ray
-  tag: 2.6.1-py310
-  pullPolicy: IfNotPresent
+  repository: gcr.io/tpu-vm-gke-testing/ray-muzero
+  tag: tpu
+  pullPolicy: Always
 
 nameOverride: "kuberay"
 fullnameOverride: ""
@@ -33,6 +33,7 @@ imagePullSecrets: []
 
 head:
   groupName: headgroup
+  serviceAccountName: default
   # If enableInTreeAutoscaling is true, the autoscaler sidecar will be added to the Ray head pod.
   # Ray autoscaler integration is supported only for Ray versions >= 1.11.0
   # Ray autoscaler integration is Beta with KubeRay >= 0.3.0 and Ray >= 2.0.0.
@@ -89,6 +90,11 @@ head:
   # It is usually best to set requests equal to limits.
   # See https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/config.html#resources
   # for further guidance.
+  #
+  securityContext:
+    capabilities:
+      add:
+      - SYS_PTRACE
   resources:
     limits:
       cpu: "8"
@@ -138,19 +144,27 @@ worker:
   # If you want to disable the default workergroup
   # uncomment the line below
   # disabled: true
-  groupName: workergroup
+  groupName: tpu-trainer
+  serviceAccountName: default
   replicas: 1
-  minReplicas: 1 
+  minReplicas: 1
   maxReplicas: 1
   type: worker
   labels:
     cloud.google.com/gke-ray-node-type: worker
   rayStartParams:
     block: 'true'
-    resources: '"{\"google.com/tpu\": 4}"'
+    resources: '"{\"TPU\": 4, \"trainer\": 1}"'
   initContainerImage: 'busybox:1.28'  # Enable users to specify the image for init container. Users can pull the busybox image from their private repositories.
   # Security context for the init container.
-  initContainerSecurityContext: {}
+  initContainerSecurityContext:
+      capabilities:
+        add:
+        - SYS_PTRACE
+  securityContext:
+    capabilities:
+      add:
+      - SYS_PTRACE
   # containerEnv specifies environment variables for the Ray container,
   # Follows standard K8s container env schema.
   containerEnv: []
@@ -172,14 +186,14 @@ worker:
   # for further guidance.
   resources:
     limits:
-      cpu: "1"
+      cpu: "200"
       google.com/tpu: "4"
-      memory: "40G"
+      memory: "400G"
       ephemeral-storage: 20Gi
     requests:
-      cpu: "1"
+      cpu: "200"
       google.com/tpu: "4"
-      memory: "40G"
+      memory: "400G"
       ephemeral-storage: 10Gi
   annotations:
     key: value
@@ -187,7 +201,6 @@ worker:
     iam.gke.io/gke-metadata-server-enabled: "true"
     cloud.google.com/gke-tpu-accelerator: tpu-v4-podslice
     cloud.google.com/gke-tpu-topology: 2x2x1
-    cloud.google.com/gke-placement-group: "tpu-pool"
   tolerations: []
   affinity: {}
   # Ray container security context.
@@ -226,19 +239,118 @@ worker:
 # For example, key:small-group in the map below
 # will be used as the groupName
 additionalWorkerGroups:
-  smallGroup:
-    # Disabled by default
-    disabled: true
+  reverbWorker:
+    serviceAccountName: default
+    disabled: false
     replicas: 1
     minReplicas: 1
-    maxReplicas: 3
+    maxReplicas: 1
+    type: worker
+    labels:
+      cloud.google.com/gke-ray-node-type: worker
+    rayStartParams:
+      block: 'true'
+      resources: '"{\"TPU\": 4, \"replay_buffer\": 1, \"inference_cpu_handler\": 1}"'
+    initContainerImage: 'busybox:1.28'  # Enable users to specify the image for init container. Users can pull the busybox image from their private repositories.
+    # Security context for the init container.
+    initContainerSecurityContext:
+      capabilities:
+        add:
+        - SYS_PTRACE
+    securityContext:
+      capabilities:
+        add:
+        - SYS_PTRACE
+    # containerEnv specifies environment variables for the Ray container,
+    # Follows standard K8s container env schema.
+    containerEnv: []
+    # - name: EXAMPLE_ENV
+    #   value: "1"
+    envFrom: []
+      # - secretRef:
+      #     name: my-env-secret
+    # ports optionally allows specifying ports for the Ray container.
+    # ports: []
+    # resource requests and limits for the Ray head container.
+    # Modify as needed for your application.
+    # Note that the resources in this example are much too small for production;
+    # we don't recommend allocating less than 8G memory for a Ray pod in production.
+    # Ray pods should be sized to take up entire K8s nodes when possible.
+    # Always set CPU and memory limits for Ray pods.
+    # It is usually best to set requests equal to limits.
+    # See https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/config.html#resources
+    # for further guidance.
+    resources:
+      limits:
+        cpu: "200"
+        google.com/tpu: "4"
+        memory: "400G"
+        ephemeral-storage: 20Gi
+      requests:
+        cpu: "200"
+        google.com/tpu: "4"
+        memory: "400G"
+        ephemeral-storage: 10Gi
+    annotations:
+      key: value
+    nodeSelector:
+      iam.gke.io/gke-metadata-server-enabled: "true"
+      cloud.google.com/gke-tpu-accelerator: tpu-v4-podslice
+      cloud.google.com/gke-tpu-topology: 2x2x1
+    tolerations: []
+    affinity: {}
+    # Ray container security context.
+    volumes:
+      - name: ray-logs
+        emptyDir: {}
+      - name: fluentbit-config
+        configMap:
+          name: fluentbit-config
+    # Ray writes logs to /tmp/ray/session_latests/logs
+    volumeMounts:
+      - mountPath: /tmp/ray
+        name: ray-logs
+    # sidecarContainers specifies additional containers to attach to the Ray pod.
+    # Follows standard K8s container spec.
+    sidecarContainers:
+      - name: fluentbit
+        image: fluent/fluent-bit:1.9.6
+        # These resource requests for Fluent Bit should be sufficient in production.
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 2Gi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 4Gi
+        volumeMounts:
+        - mountPath: /tmp/ray
+          name: ray-logs
+        - mountPath: /fluent-bit/etc/
+          name: fluentbit-config
+  cpuWorker:
+    serviceAccountName: default
+    disabled: false
+    replicas: 1
+    minReplicas: 100
+    maxReplicas: 100
     type: worker
     labels: {}
     rayStartParams:
       block: 'true'
+      resources: '"{\"actor\": 1}"'
     initContainerImage: 'busybox:1.28'  # Enable users to specify the image for init container. Users can pull the busybox image from their private repositories.
     # Security context for the init container.
-    initContainerSecurityContext: {}
+    initContainerSecurityContext:
+      capabilities:
+        add:
+        - SYS_PTRACE
+    securityContext:
+      capabilities:
+        add:
+        - SYS_PTRACE
   # containerEnv specifies environment variables for the Ray container,
   # Follows standard K8s container env schema.
     containerEnv: []
@@ -260,11 +372,11 @@ additionalWorkerGroups:
   # for further guidance.
     resources:
       limits:
-        cpu: 1
-        memory: "1G"
+        cpu: 15
+        memory: "50G"
       requests:
-        cpu: 1
-        memory: "1G"
+        cpu: 15
+        memory: "50G"
     annotations:
       key: value
     nodeSelector: {}

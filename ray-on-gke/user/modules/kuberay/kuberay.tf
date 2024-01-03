@@ -13,19 +13,10 @@
 # limitations under the License.
 
 resource "helm_release" "ray-cluster" {
-  name       = "example-cluster"
+  name       = "muzero-cluster"
   repository = "https://ray-project.github.io/kuberay-helm/"
   chart      = "ray-cluster"
   namespace  = var.namespace
-  version    = "0.6.1"
+  version    = "1.0.0"
   values     = var.enable_autopilot ? [file("${path.module}/kuberay-autopilot-values.yaml")] : (var.enable_tpu ? [file("${path.module}/kuberay-tpu-values.yaml")] : [file("${path.module}/kuberay-values.yaml")])
-}
-
-data "local_file" "tpu_worker_svc" {
-  filename = "${path.module}/config/tpu-worker-svc.yaml"
-}
-
-resource "kubectl_manifest" "tpu_worker_svc" {
-  override_namespace = var.namespace
-  yaml_body          = data.local_file.tpu_worker_svc.content
 }
