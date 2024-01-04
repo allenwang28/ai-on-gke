@@ -92,6 +92,7 @@ head:
   # for further guidance.
   #
   securityContext:
+    privileged: true
     capabilities:
       add:
       - SYS_PTRACE
@@ -157,11 +158,18 @@ worker:
     resources: '"{\"TPU\": 4}"'
   initContainerImage: 'busybox:1.28'  # Enable users to specify the image for init container. Users can pull the busybox image from their private repositories.
   # Security context for the init container.
+  clusterIP: None
+  ports:
+    - containerPort: 8471
+      name: slicebuilder
+    - containerPort: 8081
+      name: mxla
   initContainerSecurityContext:
       capabilities:
         add:
         - SYS_PTRACE
   securityContext:
+    privileged: true
     capabilities:
       add:
       - SYS_PTRACE
@@ -201,6 +209,7 @@ worker:
     iam.gke.io/gke-metadata-server-enabled: "true"
     cloud.google.com/gke-tpu-accelerator: tpu-v4-podslice
     cloud.google.com/gke-tpu-topology: 2x2x2
+    cloud.google.com/gke-placement-group: "tpu-pool-2"
   tolerations: []
   affinity: {}
   # Ray container security context.
@@ -257,7 +266,14 @@ additionalWorkerGroups:
       capabilities:
         add:
         - SYS_PTRACE
+    clusterIP: None
+    ports:
+      - containerPort: 8471
+        name: slicebuilder
+      - containerPort: 8081
+        name: mxla
     securityContext:
+      privileged: true
       capabilities:
         add:
         - SYS_PTRACE
@@ -297,6 +313,7 @@ additionalWorkerGroups:
       iam.gke.io/gke-metadata-server-enabled: "true"
       cloud.google.com/gke-tpu-accelerator: tpu-v4-podslice
       cloud.google.com/gke-tpu-topology: 2x2x2
+      cloud.google.com/gke-placement-group: "tpu-pool-1"
     tolerations: []
     affinity: {}
     # Ray container security context.
@@ -347,7 +364,13 @@ additionalWorkerGroups:
       capabilities:
         add:
         - SYS_PTRACE
+    ports:
+      - containerPort: 8471
+        name: slicebuilder
+      - containerPort: 8081
+        name: mxla
     securityContext:
+      privileged: true
       capabilities:
         add:
         - SYS_PTRACE
