@@ -18,7 +18,6 @@
 
 # The KubeRay community welcomes PRs to expose additional configuration
 # in this Helm chart.
-
 image:
   # Replace this with your own image if needed.
   repository: gcr.io/tpu-vm-gke-testing/ray-muzero
