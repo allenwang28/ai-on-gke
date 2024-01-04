@@ -144,11 +144,11 @@ worker:
   # If you want to disable the default workergroup
   # uncomment the line below
   # disabled: true
-  groupName: tpu-pod-1
+  groupName: tpu-pod
   serviceAccountName: default
-  replicas: 2
-  minReplicas: 2
-  maxReplicas: 2
+  replicas: 8
+  minReplicas: 8
+  maxReplicas: 8
   type: worker
   labels:
     cloud.google.com/gke-ray-node-type: worker
@@ -249,7 +249,7 @@ worker:
 additionalWorkerGroups:
   tpu-pod-2:
     serviceAccountName: default
-    disabled: false
+    disabled: true
     replicas: 2
     minReplicas: 2
     maxReplicas: 2
